@@ -1,4 +1,4 @@
-
+ï»¿
 #include <iostream>
 #include "hthreadpool.h"
 #include "CollectFiles.h"
@@ -12,6 +12,10 @@
 #include "spdlog/fmt/ostr.h"
 #include "Config.h"
 
+inline std::u8string to_u8string(const std::string& str)
+{
+    return std::u8string(str.begin(), str.end());
+}
 
 bool CompareFile(const std::filesystem::path& srcFile, const std::filesystem::path& dstFile)
 {
@@ -73,11 +77,11 @@ bool CompareFile(const std::filesystem::path& srcFile, const std::filesystem::pa
     return true;
 }
 
-int Sync(const std::string& src, const std::string& dst)
+int Sync(const std::u8string& src, const std::u8string& dst)
 {
     if (!std::filesystem::exists(src) || !std::filesystem::is_directory(src))
     {
-        spdlog::error("Source directory does not exist : {0}", src);
+        spdlog::error("Source directory does not exist : {0}", reinterpret_cast<const char*>(src.c_str()));
         return -1;
     }
 
@@ -85,7 +89,7 @@ int Sync(const std::string& src, const std::string& dst)
     {
         if (!std::filesystem::create_directory(dst))
         {
-            spdlog::error("Failed to create directory: {0}", dst);
+            spdlog::error("Failed to create directory: {0}", reinterpret_cast<const char*>(dst.c_str()));
             return -1;
         }
     }
@@ -103,7 +107,7 @@ int Sync(const std::string& src, const std::string& dst)
 
     if (!Config::instance().disableFileDeletion)
     {
-        // É¾³ý¶àÓàµÄÎÄ¼þ
+        // åˆ é™¤å¤šä½™çš„æ–‡ä»¶
         for (auto& file : dstFiles.Files())
         {
             if (!srcRelativeFileSet.contains(dstFiles.GetRelativePath(file)))
@@ -191,16 +195,16 @@ void SyncCommand(args::Subparser& parser)
 
     for (auto&& path : srcIgnoreList.Get())
     {
-        Config::instance().srcIgnores.push_back(path);
+        Config::instance().srcIgnores.push_back(to_u8string(path));
     }
     for (auto&& path : dstIgnoreList.Get())
     {
-        Config::instance().dstIgnores.push_back(path);
+        Config::instance().dstIgnores.push_back(to_u8string(path));
     }
     for (auto&& path : ignoreList.Get())
     {
-        Config::instance().srcIgnores.push_back(path);
-        Config::instance().dstIgnores.push_back(path);
+        Config::instance().srcIgnores.push_back(to_u8string(path));
+        Config::instance().dstIgnores.push_back(to_u8string(path));
     }
 
 
@@ -212,7 +216,7 @@ void SyncCommand(args::Subparser& parser)
     if (srcDir && dstDir)
     {
         auto start = std::chrono::high_resolution_clock::now();
-        auto code = Sync(srcDir.Get(), dstDir.Get());
+        auto code = Sync(to_u8string(srcDir.Get()), to_u8string(dstDir.Get()));
         auto finish = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> elapsed = finish - start;
         spdlog::debug("sync time: {0}ms, code:{1}", elapsed.count(), code);
@@ -236,7 +240,7 @@ void CopyCommand(args::Subparser& parser)
 
     for (auto&& path : srcIgnoreList.Get())
     {
-        Config::instance().srcIgnores.push_back(path);
+        Config::instance().srcIgnores.push_back(to_u8string(path));
     }
     Config::instance().disableFileDeletion = true;
 
@@ -246,7 +250,7 @@ void CopyCommand(args::Subparser& parser)
 
         if (std::filesystem::is_directory(srcDir.Get()))
         {
-            Sync(srcDir.Get(), dstDir.Get());
+            Sync(to_u8string(srcDir.Get()), to_u8string(dstDir.Get()));
         }
         else
         {
@@ -258,7 +262,7 @@ void CopyCommand(args::Subparser& parser)
                 {
                     std::filesystem::create_directories(dstFile.parent_path());
                     std::filesystem::copy_file(srcFile, dstFile, std::filesystem::copy_options::overwrite_existing);
-                    spdlog::info("copy file: {0}", srcFile.string());
+                    spdlog::info("copy file: {0}", srcFile);
                 }
             }
             catch (const std::filesystem::filesystem_error& e)
@@ -283,14 +287,14 @@ void CopyCommand(args::Subparser& parser)
 
 int main(int argc, char** argv)
 {
-    args::Group commands(globalParser, "commands");
-    args::Command sync(commands, "sync", "synchronize folder content", &SyncCommand);
-    args::Command copy(commands, "copy", "copying files or folders", &CopyCommand);
-    
-    args::GlobalOptions globals(globalParser, arguments);
-
     try
     {
+        args::Group commands(globalParser, "commands");
+        args::Command sync(commands, "sync", "synchronize folder content", &SyncCommand);
+        args::Command copy(commands, "copy", "copying files or folders", &CopyCommand);
+
+        args::GlobalOptions globals(globalParser, arguments);
+
         globalParser.ParseCLI(argc, argv);
     }
     catch (args::Help)

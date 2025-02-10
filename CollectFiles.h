@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <filesystem>
 
@@ -12,9 +12,9 @@ enum class PathType
 
 struct IgnoreAttribute
 {
-    std::string base;
-    std::string path;
-    // �Ƿ�ݹ�
+    std::u8string base;
+    std::u8string path;
+    // 是否递归
     bool isRecursive;
     PathType type;
 };
@@ -23,7 +23,7 @@ class CollectFiles
 {
 public:
 
-    CollectFiles(const std::string& path, const std::vector<std::string>& ignoreLines = {});
+    CollectFiles(const std::u8string& path, const std::vector<std::u8string>& ignoreLines = {});
 
     ~CollectFiles();
 
@@ -41,14 +41,14 @@ private:
 
     void ParseGitIgnore(const std::filesystem::path& path);
 
-    void ParseIgnoreLine(const std::string& str, const std::string& parent_path);
+    void ParseIgnoreLine(const std::u8string& str, const std::u8string& parent_path);
 
-    std::string FmtPath(const std::string& path);
+    std::u8string FmtPath(const std::u8string& path);
 
 protected:
-    std::string m_rootPath;
+    std::u8string m_rootPath;
     std::vector<IgnoreAttribute> m_ignores;
     std::vector<std::filesystem::path> m_files;
-    std::string m_preferredSeparator;
+    std::u8string m_preferredSeparator;
 };
 

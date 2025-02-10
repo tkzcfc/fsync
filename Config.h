@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <vector>
 #include <string>
@@ -11,12 +11,12 @@ public:
 
 	Config();
 
-	std::vector<std::string> srcIgnores;
-	std::vector<std::string> dstIgnores;
+	std::vector<std::u8string> srcIgnores;
+	std::vector<std::u8string> dstIgnores;
 
-	// ½ûÓÃÎÄ¼şÉ¾³ı
+	// ç¦ç”¨æ–‡ä»¶åˆ é™¤
 	bool disableFileDeletion;
-	// Ïß³Ì³ØÏß³ÌÊıÁ¿
+	// çº¿ç¨‹æ± çº¿ç¨‹æ•°é‡
 	int threadNum;
 };
 

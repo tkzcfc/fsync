@@ -1,8 +1,8 @@
-#include "CollectFiles.h"
+ï»¿#include "CollectFiles.h"
 #include <fstream>
 #include <iostream>
 
-CollectFiles::CollectFiles(const std::string& path, const std::vector<std::string>& ignoreLines)
+CollectFiles::CollectFiles(const std::u8string& path, const std::vector<std::u8string>& ignoreLines)
 {
     m_preferredSeparator = std::filesystem::path::preferred_separator;
 
@@ -15,7 +15,7 @@ CollectFiles::CollectFiles(const std::string& path, const std::vector<std::strin
 
     IgnoreAttribute attri;
     attri.base = m_rootPath;
-    attri.path = ".git";
+    attri.path = u8".git";
     attri.isRecursive = true;
     attri.type = PathType::Dir;
     m_ignores.push_back(attri);
@@ -38,9 +38,9 @@ const std::vector<std::filesystem::path>& CollectFiles::Files()
 
 std::filesystem::path CollectFiles::GetRelativePath(const std::filesystem::path& path)
 {
-    if (path.string().size() >= m_rootPath.size() && path.string().substr(0, m_rootPath.size()) == m_rootPath)
+    if (path.u8string().size() >= m_rootPath.size() && path.u8string().substr(0, m_rootPath.size()) == m_rootPath)
     {
-        return path.string().substr(m_rootPath.size() + 1);
+        return path.u8string().substr(m_rootPath.size() + 1);
     }
     return "";
 }
@@ -68,7 +68,7 @@ void CollectFiles::WalkFiles(const std::filesystem::path& path)
 
     for (auto& file : files)
     {
-        if (file.filename().string() == ".gitignore" || file.extension().string() == ".gitignore")
+        if (file.filename().u8string() == u8".gitignore" || file.extension().u8string() == u8".gitignore")
         {
             ParseGitIgnore(file);
         }
@@ -94,29 +94,29 @@ void CollectFiles::WalkFiles(const std::filesystem::path& path)
 bool CollectFiles::Ignore(const std::filesystem::path& path)
 {
     bool isDirectory = std::filesystem::is_directory(path);
-    auto pathStr = path.string();
-    auto fileName = path.filename().string();
+    auto pathStr = path.u8string();
+    auto fileName = path.filename().u8string();
 
     for (auto& ignore : m_ignores)
     {
-        // ÓĞĞ§Â·¾¶
+        // æœ‰æ•ˆè·¯å¾„
         if (!pathStr.starts_with(ignore.base))
         {
             continue;
         }
 
-        // ²»µİ¹éÔòÅĞ¶ÏÊÇ·ñÔÚÓĞĞ§Â·¾¶ÄÚ d:\new
-        if (!ignore.isRecursive && path.parent_path().string() != ignore.base)
+        // ä¸é€’å½’åˆ™åˆ¤æ–­æ˜¯å¦åœ¨æœ‰æ•ˆè·¯å¾„å†… d:\new
+        if (!ignore.isRecursive && path.parent_path().u8string() != ignore.base)
         {
             continue;
         }
 
-        // ÎÄ¼şºó×ºÍ¨Åä
+        // æ–‡ä»¶åç¼€é€šé…
         if (ignore.type == PathType::MatchFile)
         {
-            if (path.filename().string() == ignore.path)
+            if (path.filename().u8string() == ignore.path)
                 return true;
-            if (path.extension().string() == ignore.path)
+            if (path.extension().u8string() == ignore.path)
                 return true;
         }
 
@@ -127,7 +127,7 @@ bool CollectFiles::Ignore(const std::filesystem::path& path)
             case PathType::Dir:
             case PathType::Both:
             {
-                if (path.filename().string() == ignore.path)
+                if (path.filename().u8string() == ignore.path)
                 {
                     return true;
                 }
@@ -143,7 +143,7 @@ bool CollectFiles::Ignore(const std::filesystem::path& path)
             case PathType::File:
             case PathType::Both:
             {
-                if (path.filename().string() == ignore.path)
+                if (path.filename().u8string() == ignore.path)
                 {
                     return true;
                 }
@@ -156,11 +156,11 @@ bool CollectFiles::Ignore(const std::filesystem::path& path)
     return false;
 }
 
-inline std::string trim(const std::string& str, const std::string& whitespace = " \t\n\r") 
+inline std::u8string trim(const std::u8string& str, const std::u8string& whitespace = u8" \t\n\r") 
 {
     size_t start = str.find_first_not_of(whitespace);
-    if (start == std::string::npos)
-        return ""; // no content except whitespace
+    if (start == std::u8string::npos)
+        return u8""; // no content except whitespace
     size_t end = str.find_last_not_of(whitespace);
     return str.substr(start, end - start + 1);
 }
@@ -174,17 +174,18 @@ void CollectFiles::ParseGitIgnore(const std::filesystem::path& path)
         return;
     }
 
-    std::string parent_path = path.parent_path().string();
+    std::u8string parent_path = path.parent_path().u8string();
     std::string line;
     while (std::getline(file, line)) 
     {
-        ParseIgnoreLine(line, parent_path);
+        std::u8string u8line = std::u8string(reinterpret_cast<const char8_t*>(line.c_str()));
+        ParseIgnoreLine(u8line, parent_path);
     }
 
     file.close();
 }
 
-void CollectFiles::ParseIgnoreLine(const std::string& str, const std::string& parent_path)
+void CollectFiles::ParseIgnoreLine(const std::u8string& str, const std::u8string& parent_path)
 {
     auto line = trim(str);
     if (line.empty() || line[0] == '#')
@@ -231,7 +232,7 @@ void CollectFiles::ParseIgnoreLine(const std::string& str, const std::string& pa
         return;
 
     auto separatorPos = line.find_last_of('/');
-    if (separatorPos != std::string::npos && separatorPos > 0)
+    if (separatorPos != std::u8string::npos && separatorPos > 0)
     {
         attri.base = attri.base + m_preferredSeparator + line.substr(0, separatorPos);
         line = line.substr(separatorPos + 1);
@@ -242,10 +243,10 @@ void CollectFiles::ParseIgnoreLine(const std::string& str, const std::string& pa
     m_ignores.push_back(attri);
 }
 
-std::string CollectFiles::FmtPath(const std::string& path)
+std::u8string CollectFiles::FmtPath(const std::u8string& path)
 {
-    std::string fmt = path;
-    if(m_preferredSeparator == "\\")
+    std::u8string fmt = path;
+    if(m_preferredSeparator == u8"\\")
     {
         for (size_t i = 0; i < fmt.size(); ++i)
         {
